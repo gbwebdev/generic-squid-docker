@@ -3,10 +3,7 @@ name: Create and publish a Docker image
 
 on:
   release:
-    types: [created, published]
-  push:
-    tags:
-      - 'v*'
+    types: [created]
 
 env:
   REGISTRY: ghcr.io

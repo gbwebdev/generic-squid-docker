@@ -19,9 +19,23 @@ nl_to_space() {
   echo "$1" | tr '\n,' '  ' | xargs || true
 }
 
-DOMAINS="$(nl_to_space "$ALLOW_DOMAINS")"
-CIDRS="$(nl_to_space "$ALLOW_CIDRS")"
-PORTS="$(nl_to_space "${ALLOW_PORTS:-80 443}")"
+# Clean and process inputs, ensuring empty strings stay empty
+DOMAINS=""
+if [ -n "$ALLOW_DOMAINS" ]; then
+  DOMAINS="$(nl_to_space "$ALLOW_DOMAINS")"
+fi
+
+CIDRS=""
+if [ -n "$ALLOW_CIDRS" ]; then
+  CIDRS="$(nl_to_space "$ALLOW_CIDRS")"
+fi
+
+PORTS=""
+if [ -n "$ALLOW_PORTS" ]; then
+  PORTS="$(nl_to_space "$ALLOW_PORTS")"
+else
+  PORTS="80 443"
+fi
 
 # Build ACL snippets
 DOMAINS_ACL=""
@@ -147,6 +161,20 @@ ${ALLOW_BLOCK_RULES}
 request_body_max_size 64 MB
 reply_body_max_size 0
 EOF
+
+# Debug output
+echo "DEBUG: DOMAINS='$DOMAINS'"
+echo "DEBUG: CIDRS='$CIDRS'"
+echo "DEBUG: PORTS='$PORTS'"
+echo "DEBUG: DOMAINS_ACL='$DOMAINS_ACL'"
+echo "DEBUG: SNI_ACL='$SNI_ACL'"
+echo "DEBUG: CIDRS_ACL='$CIDRS_ACL'"
+echo "DEBUG: PORTS_ACL='$PORTS_ACL'"
+
+# Show the generated configuration
+echo "=== Generated squid.conf ==="
+cat /etc/squid/squid.conf
+echo "=== End of squid.conf ==="
 
 # Start squid in foreground mode for Docker
 exec squid -f /etc/squid/squid.conf -N
