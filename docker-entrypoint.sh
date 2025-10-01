@@ -60,7 +60,8 @@ fi
 
 PORTS_ACL=""
 if [ -n "$PORTS" ]; then
-  PORTS_ACL="acl allowed_ports port ${PORTS}"
+  PORTS_ACL="acl allowed_ports port ${PORTS}
+"
 fi
 
 # Access rules
@@ -121,19 +122,36 @@ EOF
 )
 fi
 
-# Build ACL section only with defined ACLs
+# Build ACL section only with defined ACLs  
 ACL_SECTION=""
+
+# Add each ACL section with proper line separation
 if [ -n "$DOMAINS_ACL" ]; then
-  ACL_SECTION="${ACL_SECTION}$(printf "${DOMAINS_ACL}")"
+  ACL_SECTION="$DOMAINS_ACL"
 fi
+
 if [ -n "$SNI_ACL" ]; then
-  ACL_SECTION="${ACL_SECTION}$(printf "${SNI_ACL}")"
+  if [ -n "$ACL_SECTION" ]; then
+    ACL_SECTION="${ACL_SECTION}${SNI_ACL}"
+  else
+    ACL_SECTION="$SNI_ACL"
+  fi
 fi
+
 if [ -n "$CIDRS_ACL" ]; then
-  ACL_SECTION="${ACL_SECTION}$(printf "${CIDRS_ACL}")"
+  if [ -n "$ACL_SECTION" ]; then
+    ACL_SECTION="${ACL_SECTION}${CIDRS_ACL}"
+  else
+    ACL_SECTION="$CIDRS_ACL"
+  fi
 fi
+
 if [ -n "$PORTS_ACL" ]; then
-  ACL_SECTION="${ACL_SECTION}${PORTS_ACL}"
+  if [ -n "$ACL_SECTION" ]; then
+    ACL_SECTION="${ACL_SECTION}${PORTS_ACL}"
+  else
+    ACL_SECTION="$PORTS_ACL"
+  fi
 fi
 
 # Render /etc/squid/squid.conf
@@ -162,19 +180,21 @@ request_body_max_size 64 MB
 reply_body_max_size 0
 EOF
 
-# Debug output
-echo "DEBUG: DOMAINS='$DOMAINS'"
-echo "DEBUG: CIDRS='$CIDRS'"
-echo "DEBUG: PORTS='$PORTS'"
-echo "DEBUG: DOMAINS_ACL='$DOMAINS_ACL'"
-echo "DEBUG: SNI_ACL='$SNI_ACL'"
-echo "DEBUG: CIDRS_ACL='$CIDRS_ACL'"
-echo "DEBUG: PORTS_ACL='$PORTS_ACL'"
+# Debug output (only when DEBUG=true)
+if [ "${DEBUG:-false}" = "true" ]; then
+  echo "DEBUG: DOMAINS='$DOMAINS'"
+  echo "DEBUG: CIDRS='$CIDRS'"  
+  echo "DEBUG: PORTS='$PORTS'"
+  echo "DEBUG: DOMAINS_ACL='$DOMAINS_ACL'"
+  echo "DEBUG: SNI_ACL='$SNI_ACL'"
+  echo "DEBUG: CIDRS_ACL='$CIDRS_ACL'"
+  echo "DEBUG: PORTS_ACL='$PORTS_ACL'"
 
-# Show the generated configuration
-echo "=== Generated squid.conf ==="
-cat /etc/squid/squid.conf
-echo "=== End of squid.conf ==="
+  # Show the generated configuration
+  echo "=== Generated squid.conf ==="
+  cat /etc/squid/squid.conf
+  echo "=== End of squid.conf ==="
+fi
 
 # Start squid in foreground mode for Docker
 exec squid -f /etc/squid/squid.conf -N
