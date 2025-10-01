@@ -10,6 +10,8 @@ RUN chmod +x /docker-entrypoint.sh
 ENV SQUID_CACHE_LOG=/var/log/squid/cache.log \
     SQUID_ACCESS_LOG=/var/log/squid/access.log \
     ALLOW_CIDRS="8.8.8.8/32" \
-    ALLOW_PORTS="80,443" 
+    ALLOW_PORTS="80,443" \
+    DISABLE_CACHE="true" \
+    BLOCK_BY_DEFAULT="true"
 
 ENTRYPOINT [ "/docker-entrypoint.sh" ]
